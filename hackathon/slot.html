@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Select Time</title>
+  <link >
+</head>
+<body>
+    <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f2f2f2;
+    }
+
+    /* Card container */
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 300px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 10px;
+      background: #333;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #333;
+    }
+
+    #result {
+      margin-top: 20px;
+    }
+    .timestart{ 
+        margin-right: 200px;
+        padding: top 80px; 
+    }
+  </style>
+<div class="card">
+<h2>Select Time</h2>
+<p class="timestart">Start time:</p>
+<input type="datetime-local" id="startTime">
+<p class="timestart">End time :</time></p>
+<input type="datetime-local" id="endTime">
+
+<button onclick="checkAvailability()">Check Availability</button>
+
+<div id="result"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabaseUrl = "https://tspzksjaoggvyrpuvdkw.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzcHprc2phb2dndnlycHV2ZGt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MjI3NzAsImV4cCI6MjA5MTI5ODc3MH0.VJd1v89fLQRytP4iC0D04bzzB_wJGYSwLkVC1lksFkI";
+const client = supabase.createClient(supabaseUrl, supabaseKey);
+const selected = JSON.parse(localStorage.getItem("selected_slot"));
+console.log("Selected Slot:", selected);
+ async function checkAvailability() {
+    
+  const startTime = document.getElementById("startTime").value;
+  const endTime = document.getElementById("endTime").value;
+  const slotId = localStorage.getItem("slot_id");
+
+  if (!startTime || !endTime) {
+    alert("Select time first");
+    return;
+  }
+
+  const { data, error } = await client.rpc('get_slots_with_count', {
+    start_time: startTime,
+    end_time: endTime
+  });
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  const selected = data.find(s => s.id === slotId);
+  if (!selected) {
+    alert("Slot not found");
+    return;
+  }
+
+  document.getElementById("result").innerHTML = `
+    <h3>${selected.title}</h3>
+    <p>${selected.available_slots} slots available</p>
+    <button onclick="bookNow()">Book Now</button>
+  `;
+}
+async function bookNow() {
+  const slotId = localStorage.getItem("slot_id");
+  const startTime = document.getElementById("startTime").value;
+  const endTime = document.getElementById("endTime").value;
+  localStorage.setItem("start_time", startTime);
+localStorage.setItem("end_time", endTime);
+
+  const { error } = await client.from('bookings').insert({
+   
+    slot_id: slotId,
+    start_time: startTime,
+    end_time: endTime,
+    status: 'booked'
+  });
+if (error) {
+  console.log(error);
+  alert(error.message);   // 👈 VERY IMPORTANT
+}
+ else {
+  alert("✅ Booking successful! Redirecting to payment...");
+
+  // calculate amount (optional simple version)
+  const amount = 50;
+
+  // store for payment page
+  localStorage.setItem("payment_amount", amount);
+  localStorage.setItem("slot_id", slotId);
+
+  // 👉 redirect
+  window.location.href = "payment.html";
+}
+}
+</script>

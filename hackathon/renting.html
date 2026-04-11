@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Parking Form</title>
+
+<style>
+body{
+  font-family:Arial;
+  background:#f2f2f2;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+/* CARD */
+.card{
+  background:#fff;
+  padding:25px;
+  width:320px;
+  border-radius:30px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.2);
+  text-align:center;
+}
+
+/* FORM */
+form{
+  width:100%;
+}
+
+/* INPUT (LEFT ALIGN FIX) */
+input, textarea{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border:1px solid #ccc;
+  border-radius:8px;
+
+  display:block;
+  box-sizing:border-box;
+
+  text-align:left;   /* 🔥 LEFT ALIGN */
+}
+
+/* FILE */
+.file-wrapper{
+  margin:10px 0;
+}
+
+.file-title{
+  font-weight:bold;
+  margin-bottom:5px;
+  color:#333;
+}
+
+input[type="file"]{
+  display:none;
+}
+
+.file-label{
+  display:block;
+  padding:10px;
+  background:#111;
+  color:#fff;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+#fileName{
+  font-size:12px;
+  margin-top:5px;
+  color:green;
+}
+
+/* BUTTON */
+button{
+  width:100%;
+  padding:10px;
+  background:black;
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+/* LOADING */
+#loading{
+  display:none;
+  margin-top:10px;
+  font-weight:bold;
+  color:#444;
+}
+
+/* SUCCESS */
+#successBox{
+  display:none;
+}
+
+.check{
+  font-size:60px;
+  color:green;
+}
+
+.success-text{
+  font-size:20px;
+  margin-top:10px;
+}
+
+.small{
+  color:#666;
+  margin-top:5px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- FORM -->
+<div class="card" id="formBox">
+  <h2>Renting Out Place</h2>
+
+  <form id="myForm">
+
+    <input type="text" placeholder="First Name" required>
+    <input type="text" placeholder="Second Name" required>
+    <input type="email" placeholder="Email Address" required>
+
+    <input type="tel" id="mobile" placeholder="Mobile Number"
+           required maxlength="10"
+           oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+
+    <input type="text" placeholder="Location" required>
+    <textarea placeholder="Address"></textarea>
+
+    <!-- FILE -->
+    <div class="file-wrapper">
+      <div class="file-title">Parking Photos</div>
+
+      <label for="fileInput" class="file-label">📁 Choose File</label>
+      <input type="file" id="fileInput">
+      <div id="fileName"></div>
+    </div>
+
+    <button type="submit">Submit</button>
+
+    <div id="loading">Submitting...</div>
+  </form>
+</div>
+
+<!-- SUCCESS -->
+<div class="card" id="successBox">
+  <div class="check">✔</div>
+  <div class="success-text">Form Submitted</div>
+  <div class="small">Your details sent successfully </div>
+</div>
+
+<script>
+
+// file name show
+document.getElementById("fileInput").addEventListener("change", function(){
+  let file = this.files[0];
+  document.getElementById("fileName").textContent = file ? file.name : "";
+});
+
+// submit with 3 sec delay
+document.getElementById("myForm").addEventListener("submit", function(e){
+  e.preventDefault();
+
+  document.getElementById("loading").style.display = "block";
+
+  setTimeout(() => {
+    document.getElementById("formBox").style.display = "none";
+    document.getElementById("successBox").style.display = "block";
+  }, 3000);
+
+});
+
+</script>
+
+</body>
+</html>

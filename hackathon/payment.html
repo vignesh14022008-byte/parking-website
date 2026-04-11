@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultra GPay Payment Slot</title>
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background: #f2f2f2; /* simple light background */
+}
+
+/* Amount container (blur + liquid feel) */
+.blur-container {
+  width: 300px;
+  padding: 50px 25px;
+  border-radius: 25px;
+  background: rgba(255,255,255,0.25);  
+  backdrop-filter: blur(10px) saturate(180%);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+  text-align:center;
+  z-index:1;
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.3);
+  margin:auto;
+}
+.backgoing{
+    text-decoration:underline;
+    color: #333;
+    row-gap: 70px;
+}
+
+/* Steps */
+.step { opacity:0; max-height:0; overflow:hidden; transition: all 0.5s ease; }
+.step.active { opacity:1; max-height:1000px; }
+
+/* Inputs */
+input[type=number], input[type=password]{
+  width:100%; font-size:22px; padding:12px;
+  border:none; border-bottom:2px solid #ccc; outline:none;
+  text-align:center; margin-bottom:20px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.7);
+}
+
+/* Buttons */
+.btn {
+  width:100%; padding:14px; border:none; border-radius:25px; font-size:18px;
+  background: linear-gradient(45deg,#333,#333); color:white;
+  cursor:pointer; transition:all 0.2s; margin-top:10px;
+}
+.btn:hover { transform:scale(1.05); }
+
+/* PIN dots */
+.pin-dots { display:flex; justify-content:center; margin:20px 0; }
+.dot { width:14px; height:14px; border-radius:50%; border:2px solid #333; margin:0 6px; transition:all 0.2s; }
+.filled { background:#333; transform: scale(1.3); }
+.shake { animation: shake 0.3s; }
+@keyframes shake {0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+
+/* Loader */
+.loader { display:none; flex-direction:column; align-items:center; margin-top:20px; }
+.spinner { width:50px; height:50px; border:5px solid #ddd; border-top:5px solid #333; border-radius:50%; animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform:rotate(360deg); } }
+.bounce-dots { display:flex; gap:5px; margin-top:10px; }
+.bounce-dots div { width:10px; height:10px; background:#333; border-radius:50%; animation: bounce 0.6s infinite; }
+.bounce-dots div:nth-child(2){ animation-delay:0.2s;}
+.bounce-dots div:nth-child(3){ animation-delay:0.4s;}
+@keyframes bounce { 0%,100%{ transform:translateY(0);}50%{ transform:translateY(-10px); } }
+
+/* Tick */
+.tick { font-size:80px; color:green; transform:scale(0); animation:pop 0.5s ease forwards; margin-top:10px;}
+@keyframes pop { to { transform:scale(1); } }
+
+/* Bill */
+.bill {
+  margin-top:20px; text-align:left; font-size:16px; border-radius:12px; padding:25px;
+  background: rgba(0,0,0,0.8); 
+  color:white; box-shadow:0 6px 20px rgba(0,0,0,0.35);
+  position: relative;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.bill b { display:inline-block; width:140px; font-weight:600; }
+.slot { display:block; font-size:18px; font-weight:bold; color:#ffeb3b; margin-top:12px; }
+
+</style>
+</head>
+<body>
+
+<div class="blur-container">
+
+  <!-- Step1 Amount -->
+  <div id="step1" class="step active">
+    <h2 id="amountDisplay"></h2>
+<p id="slotInfo"></p>
+    <button class="btn" onclick="nextStep()">Pay</button>
+  </div>
+
+  <!-- Step2 PIN -->
+  <div id="step2" class="step">
+    <h2>Enter UPI PIN</h2>
+    <div class="pin-dots">
+      <div class="dot" id="d1"></div><div class="dot" id="d2"></div><div class="dot" id="d3"></div>
+      <div class="dot" id="d4"></div><div class="dot" id="d5"></div><div class="dot" id="d6"></div>
+    </div>
+    <input type="password" id="pin" maxlength="6" oninput="updateDots()">
+    <button class="btn" onclick="payNow()">Pay</button>
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <div class="bounce-dots"><div></div><div></div><div></div></div>
+      <p>Processing Payment...</p>
+    </div>
+  </div>
+
+  <!-- Step3 Success -->
+  <div id="step3" class="step">
+    <div class="tick">✔</div>
+    <h2>Payment Successful</h2>
+    <h1 id="finalAmt"></h1>
+    
+<!-- 🔥 ADD QR HERE -->
+<img id="qrCode" width="200">
+
+
+
+    <div class="bill" id="billDiv">
+      <p><b>Transaction ID:</b> <span id="txn"></span></p>
+      <p><b>Date:</b> <span id="date"></span></p>
+      <p><b>Status:</b> Success</p>
+      <span class="slot">Slot: Booked</span>
+    </div>
+  </div>
+<div id="backgoing">
+        <a href="second.html" class="backgoing">back</a>
+    </div>
+</div>
+
+
+<script>
+
+// ✅ Get stored data
+const startTime = localStorage.getItem("start_time");
+const endTime = localStorage.getItem("end_time");
+const slot = JSON.parse(localStorage.getItem("selected_slot"));
+
+// ✅ Safe calculation
+let amt = 0;
+
+if(startTime && endTime && slot){
+  const hours = (new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60);
+  amt = Math.ceil(hours) * (slot.price || 20);
+}
+
+// ✅ SHOW DATA WHEN PAGE LOADS
+window.onload = function () {
+
+  // show amount
+  document.getElementById("amountDisplay").innerText = "Pay ₹" + amt;
+
+  // show slot info
+  if(slot){
+    document.getElementById("slotInfo").innerText =
+      "📍 " + slot.title + " - " + slot.location;
+  } else {
+    document.getElementById("slotInfo").innerText = "No slot data found";
+  }
+};
+
+// ==============================
+
+function showStep(step){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById(step).classList.add('active');
+}
+
+function nextStep(){
+  showStep("step2");
+  document.getElementById("pin").focus();
+}
+
+function updateDots(){
+  let pin=document.getElementById("pin").value;
+  for(let i=1;i<=6;i++){
+    document.getElementById("d"+i).classList.remove("filled","shake");
+  }
+  for(let i=0;i<pin.length;i++){
+    document.getElementById("d"+(i+1)).classList.add("filled");
+  }
+}
+
+function payNow(){
+  let pin=document.getElementById("pin").value;
+
+  if(pin.length!==6){ 
+    for(let i=0;i<6;i++){
+      document.getElementById("d"+(i+1)).classList.add("shake");
+    }
+    return;
+  }
+
+  document.querySelector("#step2 .btn").disabled=true;
+
+  const audio=new Audio("https://www.soundjay.com/button/beep-07.mp3");
+  document.getElementById("loader").style.display="flex";
+
+  setTimeout(()=>{
+    showStep("step3");
+
+    document.getElementById("finalAmt").innerText="₹"+amt;
+    document.getElementById("txn").innerText="GPAY"+Math.floor(Math.random()*1000000);
+    document.getElementById("date").innerText=new Date().toLocaleString();
+    // 🔥 ADD THIS HERE
+const upiId = "yourupi@okaxis"; // change this
+const name = "Parking Payment";
+
+const qrData = `upi://pay?pa=${upiId}&pn=${name}&am=${amt}&cu=INR`;
+
+document.getElementById("qrCode").src =
+  "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(qrData);
+
+    audio.play();
+  },3000);
+}
+
+</script>
+
+
+</body>
+</html>

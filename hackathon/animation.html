@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Intro Video</title>
+
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: Georgia, serif;
+}
+
+/* Fullscreen video */
+video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Button */
+button {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 25px;
+  font-size: 16px;
+ width: 200px;
+  background:grey;
+  color: white;
+  cursor: pointer;
+  opacity: 0;
+  transition: 0.5s;
+  border-radius:20px;
+}
+
+button:hover {
+  background:black;
+  color: white;
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- Background Video -->
+<video id="bgVideo" autoplay muted playsinline>
+  <source src="viedia.mp4" type="video/mp4">
+</video>
+
+<!-- Button -->
+<button id="startBtn" onclick="goNext()">Get Started</button>
+
+<script>
+const video = document.getElementById("bgVideo");
+const btn = document.getElementById("startBtn");
+
+// Show button after video ends
+video.onended = function() {
+  btn.style.opacity = "1";
+};
+
+// Navigate
+function goNext() {
+  window.location.href = "loginpage.html"
+}
+</script>
+
+</body>
+</html>
